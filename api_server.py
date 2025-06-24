@@ -3,8 +3,12 @@
 from flask import Flask, request, jsonify
 from mqtt_client import MqttPublisher
 from config import MQTT_TOPIC, API_TOKEN
+from flask_cors import CORS
+
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes and origins
+
 mqtt_publisher = MqttPublisher(MQTT_TOPIC)
 
 def is_authorized(request):
