@@ -43,7 +43,7 @@ def get_last_color():
     if not is_authorized(request):
         return jsonify({"error": "Unauthorized"}), 401
 
-    if last_received_color is None:
+    if last_received_color is None or last_received_color == last_received_color + ' old message':
         return jsonify({"message": "No color has been received yet."}), 200
 
     return jsonify({"color": last_received_color}), 200
