@@ -28,21 +28,20 @@ def receive_color_feedback():
         return jsonify({"error": "Missing 'color' in request body"}), 400
 
     color_code = data['color']
-    last_received_color =color_code  # Store last color received
+    last_received_color +=  ' : old message' # Store last color received
     mqtt_publisher.publish_color(color_code)
 
     return jsonify({"status": "Color code sent to VEX", "color": color_code}), 200
 
 @app.route('/color-feedback', methods=['GET'])
 def get_last_color():
-    global last_received_color 
+    # global last_received_color 
     """GET endpoint to return the last color received."""
     if not is_authorized(request):
         return jsonify({"error": "Unauthorized"}), 401
 
     if last_received_color is None or last_received_color == last_received_color + ' : old message':
         return jsonify({"message": "No color has been received yet."}), 200
-    last_received_color +=  ' : old message' # Store last color received
     return jsonify({"color": last_received_color}), 200
 
 @app.route('/')
