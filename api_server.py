@@ -30,9 +30,11 @@ def receive_color_feedback():
         return jsonify({"error": "Missing 'color' in request body"}), 400
 
     color_code = data['color']
-    last_received_color = color_code
+    last_received_color = color_code  # Store last color received
     mqtt_publisher.publish_color(color_code)
     serial_sender.send_color(color_code)
+    last_received_color +=  ' old message' # Store last color received
+
     return jsonify({"status": "Color code sent to VEX", "color": color_code}), 200
 
 @app.route('/color-feedback', methods=['GET'])
