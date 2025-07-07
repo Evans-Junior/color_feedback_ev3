@@ -35,6 +35,7 @@ def receive_color_feedback():
 
 @app.route('/color-feedback', methods=['GET'])
 def get_last_color():
+    global last_received_color 
     """GET endpoint to return the last color received."""
     if not is_authorized(request):
         return jsonify({"error": "Unauthorized"}), 401
