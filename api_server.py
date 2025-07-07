@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 from mqtt_client import MqttPublisher
 from config import MQTT_TOPIC, API_TOKEN
 from flask_cors import CORS
-from serial_sender import SerialSender
 
 
 app = Flask(__name__)
@@ -10,7 +9,6 @@ CORS(app)  # Enable CORS for all routes and origins
 
 mqtt_publisher = MqttPublisher(MQTT_TOPIC)
 last_received_color = None  # Store last color received
-serial_sender = SerialSender()  # Serial to VEX
 
 def is_authorized(request):
     """Check if the request contains a valid API token."""
@@ -31,9 +29,7 @@ def receive_color_feedback():
 
     color_code = data['color']
     last_received_color =color_code  # Store last color received
-
     mqtt_publisher.publish_color(color_code)
-    serial_sender.send_color(color_code)
 
     return jsonify({"status": "Color code sent to VEX", "color": color_code}), 200
 
