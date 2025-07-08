@@ -1,51 +1,80 @@
 from flask import Flask, request, jsonify
-from mqtt_client import MqttPublisher
-from config import MQTT_TOPIC, API_TOKEN
 from flask_cors import CORS
-
+from config import API_TOKEN
+from collections import deque
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes and origins
+CORS(app)
 
-mqtt_publisher = MqttPublisher(MQTT_TOPIC)
-last_received_color = None  # Store last color received
+# FIFO queue to store requests
+color_queue = deque()
 
-def is_authorized(request):
-    """Check if the request contains a valid API token."""
-    token = request.headers.get('Authorization')
+def is_authorized(req):
+    token = req.headers.get("Authorization")
     return token == f"Bearer {API_TOKEN}"
 
 @app.route('/color-feedback', methods=['POST'])
 def receive_color_feedback():
-    """Secured POST endpoint to receive and publish color feedback."""
-    global last_received_color
-
     if not is_authorized(request):
         return jsonify({"error": "Unauthorized"}), 401
 
     data = request.get_json()
-    if not data or 'color' not in data:
-        return jsonify({"error": "Missing 'color' in request body"}), 400
+    if not data or 'color' not in data or 'team' not in data:
+        return jsonify({"error": "Missing 'color' or 'team' in request body"}), 400
 
-    color_code = data['color']
-    # if last_received_color is None or last_received_color = color_code:
-    #     last_received_color = color_code + ' : old message'
-    last_received_color = color_code
-    mqtt_publisher.publish_color(color_code)
-    return jsonify({"status": "Color code sent to VEX", "color": color_code}), 200
+    payload = {
+        "team": data['team'],
+        "color": data['color']
+    }
 
-@app.route('/color-feedback', methods=['GET'])
-def get_last_color():
-    # global last_received_color 
-    """GET endpoint to return the last color received."""
+    color_queue.append(payload)
+    print(f"Queued color '{payload['color']}' for team '{payload['team']}'")
+
+    return jsonify({"status": "Color queued"}), 200
+
+@app.route('/next', methods=['GET'])
+def get_next_color():
+    """
+    GET /next or /next?team=alpha
+    Pops and returns the next item globally or for a specific team.
+    """
+    team_filter = request.args.get("team")
+
+    if team_filter:
+        # Look for the first item matching the team
+        for i, item in enumerate(color_queue):
+            if item["team"] == team_filter:
+                result = color_queue[i]
+                del color_queue[i]  # Remove it from the queue
+                return jsonify(result), 200
+        return jsonify({"team": None, "color": None}), 200
+    else:
+        # No team filter — pop the next global item
+        if color_queue:
+            return jsonify(color_queue.popleft()), 200
+        else:
+            return jsonify({"team": None, "color": None}), 200
+
+@app.route('/admin/clear-queue', methods=['POST'])
+def clear_queue():
+    """
+    POST /admin/clear-queue
+    Clears the queue (admin-only)
+    """
     if not is_authorized(request):
         return jsonify({"error": "Unauthorized"}), 401
 
-    if last_received_color is None or last_received_color == last_received_color + ' : old message':
-        return jsonify({"message": "No color has been received yet."}), 200
-    return jsonify({"color": last_received_color}), 200
+    cleared = len(color_queue)
+    color_queue.clear()
+    print(f"Admin cleared queue of {cleared} items.")
 
-@app.route('/')
-def index():
-    """Simple index route to confirm the API is running."""
-    return jsonify({"message": "EV3 Color Feedback API is running"}), 200
+    return jsonify({"status": "Queue cleared", "items_removed": cleared}), 200
+
+@app.route('/queue', methods=['GET'])
+def view_queue():
+    return jsonify(list(color_queue)), 200
+
+
+
+# if __name__ == '__main__':
+#     app.run(host='0.0.0.0', port=5000)
