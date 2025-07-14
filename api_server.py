@@ -32,6 +32,54 @@ def receive_color_feedback():
 
     return jsonify({"status": "Color queued"}), 200
 
+
+@app.route('/reward-feedback', methods=['POST'])
+def receive_reward_feedback():
+    """
+    Accepts reward data sent from frontend including:
+    teamName, reward, timestamp, level, gameNumber, destination
+    """
+    if not is_authorized(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+
+    # Validate required fields
+    required_fields = ['teamName', 'reward', 'timestamp', 'level', 'gameNumber']
+    if not all(field in data for field in required_fields):
+        return jsonify({"error": "Missing one or more required fields"}), 400
+
+    payload = {
+        "team": data["teamName"],
+        "color": data["reward"],  # Mapping reward to color field for queue compatibility
+        "timestamp": data["timestamp"],
+        "level": data["level"],
+        "gameNumber": data["gameNumber"],
+        "destination": data.get("destination")  # Optional
+    }
+
+    color_queue.append(payload)
+    print(f"Queued reward '{payload['color']}' for team '{payload['team']}' at game {payload['gameNumber']}")
+
+    return jsonify({"status": "Reward queued"}), 200
+
+@app.route('/peek', methods=['GET'])
+def peek_team_payload():
+    """
+    GET /peek?team=alpha
+    Returns the next payload for a specific team (without removing it)
+    """
+    team_filter = request.args.get("team")
+    if not team_filter:
+        return jsonify({"error": "Missing 'team' query parameter"}), 400
+
+    for item in color_queue:
+        if item.get("team") == team_filter:
+            return jsonify(item), 200
+
+    return jsonify({"team": team_filter, "destination": None, "message": "No pending data"}), 200
+
+
 @app.route('/next', methods=['GET'])
 def get_next_color():
     """
