@@ -4,7 +4,8 @@ from config import API_TOKEN
 from collections import deque
 
 app = Flask(__name__)
-CORS(app)
+# Enable CORS for all routes
+CORS(app, resources={r"/*": {"origins": "*"}})  # allow all origins
 
 # FIFO queue to store requests
 color_queue = deque()
