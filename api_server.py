@@ -69,13 +69,14 @@ def receive_reward_feedback():
 def peek_team_payload():
     """
     GET /peek?team=alpha
-    Returns the next payload for a specific team (without removing it)
+    Returns the most recent payload for a specific team (without removing it)
     """
     team_filter = request.args.get("team")
     if not team_filter:
         return jsonify({"error": "Missing 'team' query parameter"}), 400
 
-    for item in color_queue:
+    # Iterate in reverse to get the most recent item
+    for item in reversed(color_queue):
         if item.get("team") == team_filter:
             return jsonify(item), 200
 
