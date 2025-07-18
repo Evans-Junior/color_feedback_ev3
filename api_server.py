@@ -160,23 +160,24 @@ def get_all_rewards():
 
 @app.route('/rewards/<team_name>', methods=['DELETE'])
 def clear_team_rewards(team_name):
-    """
-    DELETE /rewards/team_name
-    Clears all rewards for a specific team
-    """
-    if not is_authorized(request):
-        return jsonify({"error": "Unauthorized"}), 401
+    print("Deleting rewards for team:", team_name)  # Debug log
 
-    initial_length = len(color_queue)
-    # Remove all items for the specified team
-    color_queue[:] = [item for item in color_queue if item.get("team") != team_name]
-    removed_count = initial_length - len(color_queue)
-    
-    if removed_count == 0:
-        return jsonify({"error": "No rewards found for this team"}), 404
-    
-    return jsonify({"status": f"Cleared {removed_count} rewards for team '{team_name}'"})
+    try:
+        if not is_authorized(request):
+            return jsonify({"error": "Unauthorized"}), 401
 
+        initial_length = len(color_queue)
+        color_queue[:] = [item for item in color_queue if item.get("team") != team_name]
+        removed_count = initial_length - len(color_queue)
+
+        if removed_count == 0:
+            return jsonify({"error": "No rewards found for this team"}), 404
+
+        return jsonify({"status": f"Cleared {removed_count} rewards for team '{team_name}'"})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()  # Logs full error
+        return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
 
 @app.route('/queue', methods=['GET'])
 def view_queue():
