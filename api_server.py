@@ -167,8 +167,13 @@ def clear_team_rewards(team_name):
             return jsonify({"error": "Unauthorized"}), 401
 
         initial_length = len(color_queue)
-        color_queue[:] = [item for item in color_queue if item.get("team") != team_name]
-        removed_count = initial_length - len(color_queue)
+        # Create a new deque with only the items we want to keep
+        new_queue = deque(item for item in color_queue if item.get("team") != team_name)
+        removed_count = initial_length - len(new_queue)
+        
+        # Replace the original queue
+        color_queue.clear()
+        color_queue.extend(new_queue)
 
         if removed_count == 0:
             return jsonify({"error": "No rewards found for this team"}), 404
@@ -178,7 +183,8 @@ def clear_team_rewards(team_name):
         import traceback
         traceback.print_exc()  # Logs full error
         return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
-
+    
+    
 @app.route('/queue', methods=['GET'])
 def view_queue():
     return jsonify(list(color_queue)), 200
