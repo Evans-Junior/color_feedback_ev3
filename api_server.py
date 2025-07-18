@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from config import API_TOKEN
 from collections import deque
+from typing import Optional
 
 app = Flask(__name__)
 # Enable CORS for all routes
@@ -119,11 +120,67 @@ def clear_queue():
 
     return jsonify({"status": "Queue cleared", "items_removed": cleared}), 200
 
+
+@app.route('/rewards/last', methods=['GET'])
+def get_last_reward():
+    """
+    GET /rewards/last?team=team_name
+    Returns the last reward for a specific team or the most recent reward from any team
+    """
+    team_filter = request.args.get("team")
+    
+    if team_filter:
+        # Find the most recent reward for the specified team
+        team_rewards = [item for item in reversed(color_queue) if item.get("team") == team_filter]
+        if not team_rewards:
+            return jsonify({"error": "No rewards found for this team"}), 404
+        return jsonify(team_rewards[0])
+    else:
+        # Return the most recent reward from any team
+        if not color_queue:
+            return jsonify({"message": "No data available"}), 200
+        return jsonify(color_queue[-1])
+
+
+@app.route('/rewards', methods=['GET'])
+def get_all_rewards():
+    """
+    GET /rewards?team=team_name
+    Returns all rewards or all rewards for a specific team
+    """
+    team_filter = request.args.get("team")
+    
+    if team_filter:
+        team_rewards = [item for item in color_queue if item.get("team") == team_filter]
+        return jsonify(team_rewards)
+    else:
+        return jsonify(list(color_queue))
+
+
+@app.route('/rewards/<team_name>', methods=['DELETE'])
+def clear_team_rewards(team_name):
+    """
+    DELETE /rewards/team_name
+    Clears all rewards for a specific team
+    """
+    if not is_authorized(request):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    initial_length = len(color_queue)
+    # Remove all items for the specified team
+    color_queue[:] = [item for item in color_queue if item.get("team") != team_name]
+    removed_count = initial_length - len(color_queue)
+    
+    if removed_count == 0:
+        return jsonify({"error": "No rewards found for this team"}), 404
+    
+    return jsonify({"status": f"Cleared {removed_count} rewards for team '{team_name}'"})
+
+
 @app.route('/queue', methods=['GET'])
 def view_queue():
     return jsonify(list(color_queue)), 200
 
 
-
-# if __name__ == '__main__':
-#     app.run(host='0.0.0.0', port=5000)
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
