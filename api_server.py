@@ -1,8 +1,9 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from config import API_TOKEN
+from config import API_TOKEN,MQTT_TOPIC
 from collections import deque
 from typing import Optional
+from mqtt_client import MqttPublisher
 
 app = Flask(__name__)
 # Enable CORS for all routes
@@ -28,6 +29,10 @@ def receive_color_feedback():
         "team": data['team'],
         "color": data['color']
     }
+
+   # Send via MQTT
+    mqtt_publisher = MqttPublisher(MQTT_TOPIC)
+    mqtt_publisher.publish_gate(data['gate'])
 
     color_queue.append(payload)
     print(f"Queued color '{payload['color']}' for team '{payload['team']}'")
@@ -57,7 +62,9 @@ def receive_reward_feedback():
         "timestamp": data["timestamp"],
         "level": data["level"],
         "gameNumber": data["gameNumber"],
-        "destination": data.get("destination")  # Optional
+        "destination": data.get("destination"),
+        "gate":data['gate']  # Optional
+
     }
 
     color_queue.append(payload)
