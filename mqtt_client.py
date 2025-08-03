@@ -48,4 +48,4 @@ class MqttPublisher:
             print(f"Publishing color code '{gate_code}' to topic '{self.topic}'")
             self.client.publish(self.topic, gate_code)
         except Exception as e:
-            print(f"Failed to publish color code: {e}")
+            print(f"Failed to publish gate code: {e}")
