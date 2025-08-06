@@ -41,6 +41,15 @@ def receive_level_reward():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/getLevelReward', methods=['GET'])
+def getLevelReward():
+    try:
+        rewards_data = level_rewards_store.get("rewards", {})
+        return jsonify({"rewards": rewards_data}), 200
+    except Exception as e:
+        return jsonify({"error": "Failed to clear queue", "details": str(e)}), 500
+
+
 @app.route('/color-feedback', methods=['POST'])
 def receive_color_feedback():
     if not is_authorized(request):
@@ -57,7 +66,7 @@ def receive_color_feedback():
 
    # Send via MQTT
     mqtt_publisher = MqttPublisher(MQTT_TOPIC)
-    mqtt_publisher.publish_gate(data['gate'])
+    mqtt_publisher.publish_gate(getLevelReward())
 
     color_queue.append(payload)
     print(f"Queued color '{payload['color']}' for team '{payload['team']}'")
@@ -150,7 +159,7 @@ def clear_queue():
     cleared = len(color_queue)
     color_queue.clear()
     print(f"Admin cleared queue of {cleared} items.")
-
+    level_rewards_store.pop()  # Remove last item
     return jsonify({"status": "Queue cleared", "items_removed": cleared}), 200
 
 
