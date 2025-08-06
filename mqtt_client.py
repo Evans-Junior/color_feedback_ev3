@@ -42,7 +42,7 @@ class MqttPublisher:
             time.sleep(5)
             self.reconnect()
 
-     def publish_gate(self, reward_object: str):
+    def publish_gate(self, reward_object: str):
         """Publish the reward values for each team to the EV3 via MQTT."""
         try:
             print(f"Publishing '{reward_object['colorName']}' to topic '{self.topic}'")
