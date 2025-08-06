@@ -16,6 +16,31 @@ def is_authorized(req):
     token = req.headers.get("Authorization")
     return token == f"Bearer {API_TOKEN}"
 
+
+# Simulated storage for level rewards (in-memory for now)
+level_rewards_store = []
+
+@app.route('/getLevelReward', methods=['POST'])
+def receive_level_reward():
+    """
+    POST /getLevelReward
+    Receives a JSON payload with level reward data.
+    """
+    try:
+        data = request.get_json()
+
+        # Validate required fields
+        required_fields = ['level', 'teamName', 'gate', 'rewards', 'timestamp']
+        if not all(field in data for field in required_fields):
+            return jsonify({'error': 'Missing required fields'}), 400
+
+        # Save to in-memory store (you could store in DB instead)
+        level_rewards_store.append(data)
+
+        return jsonify({'status': 'Level reward received successfully', 'savedCount': len(level_rewards_store)}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/color-feedback', methods=['POST'])
 def receive_color_feedback():
     if not is_authorized(request):
