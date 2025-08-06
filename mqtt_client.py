@@ -42,10 +42,10 @@ class MqttPublisher:
             time.sleep(5)
             self.reconnect()
 
-    def publish_gate(self, gate_code: str):
-        """Publish the gate name for each team to the EV3 via MQTT."""
+     def publish_gate(self, reward_object: str):
+        """Publish the reward values for each team to the EV3 via MQTT."""
         try:
-            print(f"Publishing color code '{gate_code}' to topic '{self.topic}'")
-            self.client.publish(self.topic, gate_code)
+            print(f"Publishing '{reward_object['colorName']}' to topic '{self.topic}'")
+            self.client.publish(self.topic, reward_object)
         except Exception as e:
             print(f"Failed to publish gate code: {e}")
