@@ -11,6 +11,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # allow all origins
 
 # FIFO queue to store requests
 color_queue = deque()
+level_rewards_store = deque()  # use deque for queue behavior
 
 def is_authorized(req):
     token = req.headers.get("Authorization")
@@ -153,16 +154,30 @@ def get_next_color():
 def clear_queue():
     """
     POST /admin/clear-queue
-    Clears the queue (admin-only)
+    Clears the color queue and the most recent level reward (admin-only)
     """
     if not is_authorized(request):
         return jsonify({"error": "Unauthorized"}), 401
 
+    # Clear the color queue
     cleared = len(color_queue)
     color_queue.clear()
-    print(f"Admin cleared queue of {cleared} items.")
-    level_rewards_store.pop()  # Remove last item
-    return jsonify({"status": "Queue cleared", "items_removed": cleared}), 200
+    print(f"Admin cleared color queue of {cleared} items.")
+
+    # Remove the last added level reward if any
+    reward_removed = False
+    try:
+        level_rewards_store.clear()
+        reward_removed = True
+    except IndexError:
+        # Nothing to remove
+        pass
+
+    return jsonify({
+        "status": "Queue cleared",
+        "items_removed": cleared,
+        "reward_removed": reward_removed
+    }), 200
 
 
 @app.route('/rewards/last', methods=['GET'])
