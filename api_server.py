@@ -18,7 +18,7 @@ def is_authorized(req):
 
 
 # Simulated storage for level rewards (in-memory for now)
-level_rewards_store = deque()
+level_rewards_store = {}
 
 @app.route('/getLevelReward', methods=['POST'])
 def receive_level_reward():
