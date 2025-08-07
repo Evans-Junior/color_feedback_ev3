@@ -1,4 +1,4 @@
-rom flask import Flask, request, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from config import API_TOKEN,MQTT_TOPIC
 from collections import deque
