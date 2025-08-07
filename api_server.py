@@ -38,9 +38,9 @@ def receive_level_reward():
 @app.route('/getLevelReward', methods=['GET'])
 def getLevelReward():
     try:
-        data=jsonify(level_rewards_store)
-        color_destinations = {reward["colorName"]: reward["destination"] for reward in data["rewards"]}
-        return color_destinations, 200
+        rewards = level_rewards_store.get("rewards", [])
+        color_destinations = {reward["colorName"]: reward["destination"] for reward in rewards}
+        return jsonify(color_destinations), 200
     except Exception as e:
         return jsonify({"error": "Failed to get reward", "details": str(e)}), 500
 
