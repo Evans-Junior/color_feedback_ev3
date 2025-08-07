@@ -44,10 +44,12 @@ def receive_level_reward():
 @app.route('/getLevelReward', methods=['GET'])
 def getLevelReward():
     try:
-        # rewards_data = level_rewards_store.get("rewards", {})
         return jsonify(level_rewards_store), 200
     except Exception as e:
-        return jsonify({"error": "there is no data read more": str(e)}), 500
+        return jsonify({
+            "error": "There is no data. Read more",
+            "details": str(e)
+        }), 500
 
 
 @app.route('/color-feedback', methods=['POST'])
