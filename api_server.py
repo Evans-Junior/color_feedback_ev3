@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+rom flask import Flask, request, jsonify
 from flask_cors import CORS
 from config import API_TOKEN,MQTT_TOPIC
 from collections import deque
@@ -11,7 +11,6 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # allow all origins
 
 # FIFO queue to store requests
 color_queue = deque()
-level_rewards_store = deque()  # use deque for queue behavior
 
 def is_authorized(req):
     token = req.headers.get("Authorization")
@@ -22,35 +21,28 @@ def is_authorized(req):
 level_rewards_store = deque()
 
 @app.route('/getLevelReward', methods=['POST'])
+@app.route('/receive_level_reward', methods=['POST'])
 def receive_level_reward():
-    """
-    POST /getLevelReward
-    Receives a JSON payload with level reward data.
-    """
+    global level_rewards_store
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({"error": "Missing JSON payload"}), 400
 
-        # Validate required fields
-        required_fields = ['level', 'teamName', 'gate', 'rewards', 'timestamp']
-        if not all(field in data for field in required_fields):
-            return jsonify({'error': 'Missing required fields'}), 400
-
-        # Save to in-memory store (you could store in DB instead)
-        level_rewards_store.append(data)
-
-        return jsonify({'status': 'Level reward received successfully', 'savedCount': len(level_rewards_store)}), 200
+        level_rewards_store = data  # overwrite with the new reward
+        print("Received level reward:", data)
+        return jsonify({"status": "Reward received successfully"}), 201
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({"error": "Failed to receive reward", "details": str(e)}), 500
+
 
 @app.route('/getLevelReward', methods=['GET'])
 def getLevelReward():
     try:
         return jsonify(level_rewards_store), 200
     except Exception as e:
-        return jsonify({
-            "error": "There is no data. Read more",
-            "details": str(e)
-        }), 500
+        return jsonify({"error": "Failed to get reward", "details": str(e)}), 500
+
 
 
 @app.route('/color-feedback', methods=['POST'])
@@ -154,8 +146,9 @@ def get_next_color():
 def clear_queue():
     """
     POST /admin/clear-queue
-    Clears the color queue and the most recent level reward (admin-only)
+    Clears the color queue and the latest reward (admin-only)
     """
+    global level_rewards_store
     if not is_authorized(request):
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -164,20 +157,15 @@ def clear_queue():
     color_queue.clear()
     print(f"Admin cleared color queue of {cleared} items.")
 
-    # Remove the last added level reward if any
-    reward_removed = False
-    try:
-        level_rewards_store.clear()
-        reward_removed = True
-    except IndexError:
-        # Nothing to remove
-        pass
+    # Clear the latest level reward
+    level_rewards_store = {}
 
     return jsonify({
         "status": "Queue cleared",
         "items_removed": cleared,
-        "reward_removed": reward_removed
+        "reward_removed": True
     }), 200
+
 
 
 @app.route('/rewards/last', methods=['GET'])
