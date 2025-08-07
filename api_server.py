@@ -44,10 +44,10 @@ def receive_level_reward():
 @app.route('/getLevelReward', methods=['GET'])
 def getLevelReward():
     try:
-        rewards_data = level_rewards_store.get("rewards", {})
-        return jsonify({"rewards": rewards_data}), 200
+        # rewards_data = level_rewards_store.get("rewards", {})
+        return jsonify(level_rewards_store), 200
     except Exception as e:
-        return jsonify({"error": "Failed to clear queue", "details": str(e)}), 500
+        return jsonify({"error": "there is no data read more": str(e)}), 500
 
 
 @app.route('/color-feedback', methods=['POST'])
