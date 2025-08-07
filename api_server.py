@@ -21,7 +21,6 @@ def is_authorized(req):
 level_rewards_store = deque()
 
 @app.route('/getLevelReward', methods=['POST'])
-@app.route('/receive_level_reward', methods=['POST'])
 def receive_level_reward():
     global level_rewards_store
     try:
